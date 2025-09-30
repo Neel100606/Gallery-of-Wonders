@@ -1,0 +1,57 @@
+import mongoose from 'mongoose';
+
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    profileImage: {
+      type: String,
+      default: '/images/default-avatar.png',
+    },
+    bio: {
+      type: String,
+      maxLength: 250,
+      default: '',
+    },
+
+    // References to the user's creative works
+    works: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Work',
+      },
+    ],
+
+    // References to the user's collections
+    collections: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Collection',
+      },
+    ],
+    isAdmin: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+const User = mongoose.model('User', userSchema);
+
+export default User;
