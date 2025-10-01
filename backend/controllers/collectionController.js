@@ -166,7 +166,6 @@ const removeWorkFromCollection = asyncHandler(async (req, res) => {
       (id) => id.toString() !== workId.toString()
     );
     
-    // **NEW LOGIC: Decrement the saves count on the Work model**
     await Work.findByIdAndUpdate(workId, { $inc: { saves: -1 } });
     
     const updatedCollection = await collection.save();
