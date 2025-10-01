@@ -1,6 +1,7 @@
 import Work from '../models/workModel.js';
 import User from '../models/userModel.js'; // Needed to update user's 'works' array
 import asyncHandler from '../middlewares/asyncHandler.js';
+import Comment from '../models/commentModel.js'; 
 
 // @desc    Create a new work
 // @route   POST /api/works
@@ -102,24 +103,26 @@ const deleteWork = asyncHandler(async (req, res) => {
   const work = await Work.findById(req.params.id);
 
   if (work) {
-    // Ensure the authenticated user is the owner of the work
     if (work.user.toString() !== req.user._id.toString()) {
-      res.status(403); // Forbidden
+      res.status(403);
       throw new Error('Not authorized to delete this work.');
     }
 
-    // Also remove the work from the user's 'works' array
+    // **NEW LOGIC: Delete all comments associated with this work**
+    await Comment.deleteMany({ work: work._id });
+
     await User.findByIdAndUpdate(work.user, {
       $pull: { works: work._id },
     });
 
     await work.deleteOne();
-    res.status(200).json({ message: 'Work removed successfully.' });
+    res.status(200).json({ message: 'Work and associated comments removed successfully.' });
   } else {
     res.status(404);
     throw new Error('Work not found.');
   }
 });
+
 
 const toggleLikeOnWork = asyncHandler(async (req, res) => {
   const work = await Work.findById(req.params.id);

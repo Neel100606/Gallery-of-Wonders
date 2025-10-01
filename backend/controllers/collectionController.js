@@ -82,6 +82,14 @@ const deleteCollection = asyncHandler(async (req, res) => {
       throw new Error('Not authorized to delete this collection.');
     }
 
+    // **NEW LOGIC: Decrement saves count for all works in this collection**
+    if (collection.works && collection.works.length > 0) {
+      await Work.updateMany(
+        { _id: { $in: collection.works } },
+        { $inc: { saves: -1 } }
+      );
+    }
+
     await User.findByIdAndUpdate(req.user._id, {
       $pull: { collections: collection._id },
     });
@@ -93,6 +101,7 @@ const deleteCollection = asyncHandler(async (req, res) => {
     throw new Error('Collection not found.');
   }
 });
+
 
 const addWorkToCollection = asyncHandler(async (req, res) => {
   const { workId } = req.body;
