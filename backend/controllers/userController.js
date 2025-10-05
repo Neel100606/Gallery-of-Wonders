@@ -1,24 +1,23 @@
-import User from '../models/userModel.js';
-import Work from '../models/workModel.js';         
-import Collection from '../models/collectionModel.js'; 
-import Comment from '../models/commentModel.js';     
+import User from "../models/userModel.js";
+import Work from "../models/workModel.js";
+import Collection from "../models/collectionModel.js";
+import Comment from "../models/commentModel.js";
 
-import asyncHandler from '../middlewares/asyncHandler.js';
-import generateToken from '../utils/createToken.js';
-import bcrypt from 'bcryptjs'; // Required for password hashing and comparison
+import asyncHandler from "../middlewares/asyncHandler.js";
+import generateToken from "../utils/createToken.js";
+import bcrypt from "bcryptjs"; // Required for password hashing and comparison
 
 const createUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
     res.status(400);
-    throw new Error('Please fill in all fields.');
+    throw new Error("Please fill in all fields.");
   }
 
   const userExists = await User.findOne({ email });
   if (userExists) {
-    res.status(400);
-    throw new Error('User already exists.');
+    return res.status(400).json({ message: "User already exists." });
   }
 
   const salt = await bcrypt.genSalt(10);
@@ -28,10 +27,12 @@ const createUser = asyncHandler(async (req, res) => {
 
   if (newUser) {
     generateToken(res, newUser._id);
-    res.status(201).json({ _id: newUser._id, name: newUser.name, email: newUser.email });
+    res
+      .status(201)
+      .json({ _id: newUser._id, name: newUser.name, email: newUser.email });
   } else {
     res.status(400);
-    throw new Error('Invalid user data.');
+    throw new Error("Invalid user data.");
   }
 });
 
@@ -43,32 +44,34 @@ const loginUser = asyncHandler(async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
       generateToken(res, user._id);
-      res.status(200).json({ _id: user._id, name: user.name, email: user.email });
+      res
+        .status(200)
+        .json({ _id: user._id, name: user.name, email: user.email });
     } else {
       res.status(401);
-      throw new Error('Invalid email or password.');
+      throw new Error("Invalid email or password.");
     }
   } else {
     res.status(401);
-    throw new Error('Invalid email or password.');
+    throw new Error("Invalid email or password.");
   }
 });
 
 const logoutCurrentUser = asyncHandler(async (req, res) => {
-  res.cookie('jwt', '', {
+  res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
   });
-  res.status(200).json({ message: 'Logged out successfully' });
+  res.status(200).json({ message: "Logged out successfully" });
 });
 
 const getCurrentUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   if (user) {
-    res.json({ _id: user._id, name: user.name, email: user.email });
+    res.json({ _id: user._id, name: user.name, email: user.email, bio: user.bio, profileImage: user.profileImage });
   } else {
     res.status(404);
-    throw new Error('User not found.');
+    throw new Error("User not found.");
   }
 });
 
@@ -77,12 +80,14 @@ const updateCurrentUserProfile = asyncHandler(async (req, res) => {
 
   if (user) {
     user.name = req.body.name || user.name;
+    user.bio = req.body.bio ?? user.bio;
+    user.profileImage = req.body.profileImage || user.profileImage;
 
     if (req.body.email && req.body.email !== user.email) {
       const emailExists = await User.findOne({ email: req.body.email });
       if (emailExists) {
         res.status(400);
-        throw new Error('Email is already in use by another account.');
+        throw new Error("Email is already in use by another account.");
       }
       user.email = req.body.email;
     }
@@ -98,10 +103,12 @@ const updateCurrentUserProfile = asyncHandler(async (req, res) => {
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
+      bio: updatedUser.bio,
+      profileImage: updatedUser.profileImage,
     });
   } else {
     res.status(404);
-    throw new Error('User not found.');
+    throw new Error("User not found.");
   }
 });
 
@@ -111,12 +118,12 @@ const getAllUsers = asyncHandler(async (req, res) => {
 });
 
 const getUserById = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id).select('-password');
+  const user = await User.findById(req.params.id).select("-password");
   if (user) {
     res.json(user);
   } else {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 });
 
@@ -137,7 +144,7 @@ const updateUserById = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 });
 
@@ -147,11 +154,11 @@ const deleteUser = asyncHandler(async (req, res) => {
   if (user) {
     if (user.isAdmin) {
       res.status(400);
-      throw new Error('Cannot delete an admin user');
+      throw new Error("Cannot delete an admin user");
     }
 
     const userWorks = await Work.find({ user: user._id });
-    const workIds = userWorks.map(work => work._id);
+    const workIds = userWorks.map((work) => work._id);
 
     // 1. Delete all Works created by this user
     await Work.deleteMany({ _id: { $in: workIds } }); // <-- ADD THIS LINE
@@ -172,18 +179,15 @@ const deleteUser = asyncHandler(async (req, res) => {
     );
 
     // 6. Remove this user's likes from other works
-    await Work.updateMany(
-      { likes: user._id },
-      { $pull: { likes: user._id } }
-    );
+    await Work.updateMany({ likes: user._id }, { $pull: { likes: user._id } });
 
     // 7. Finally, delete the User document itself
     await user.deleteOne();
 
-    res.json({ message: 'User and all associated data removed successfully.' });
+    res.json({ message: "User and all associated data removed successfully." });
   } else {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 });
 
@@ -196,5 +200,5 @@ export {
   getAllUsers,
   getUserById,
   updateUserById,
-  deleteUser, 
+  deleteUser,
 };

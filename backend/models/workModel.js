@@ -1,11 +1,11 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const workSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: 'User', // Establishes a link to the creator
+      ref: "User", // Establishes a link to the creator
     },
     title: {
       type: String,
@@ -15,14 +15,15 @@ const workSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    fileUrl: {
-      type: String,
-      required: true, // URL to the image or content file
+    fileUrls: {
+      type: [String],
+      required: false,
     },
+
     category: {
       type: String,
       required: true,
-      enum: ['Art', 'Photography', 'Writing', 'Other'], // Predefined categories
+      enum: ["Art", "Photography", "Writing", "Other"], // Predefined categories
     },
     tags: [String], // For AI or user-generated tags
     views: {
@@ -30,10 +31,12 @@ const workSchema = new mongoose.Schema(
       default: 0,
     },
 
-    likes: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }],
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     saves: {
       type: Number,
       default: 0,
@@ -42,7 +45,7 @@ const workSchema = new mongoose.Schema(
     comments: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Comment',
+        ref: "Comment",
       },
     ],
   },
@@ -51,9 +54,6 @@ const workSchema = new mongoose.Schema(
   }
 );
 
-
-
-
-const Work = mongoose.model('Work', workSchema);
+const Work = mongoose.model("Work", workSchema);
 
 export default Work;

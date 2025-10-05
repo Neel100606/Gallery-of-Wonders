@@ -14,11 +14,11 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: true, 
     },
     profileImage: {
       type: String,
-      default: '/images/default-avatar.png',
+      default: 'https://res.cloudinary.com/dw3dkqiac/image/upload/v1759513698/zqzrken305a14txbfjmv.jpg',
     },
     bio: {
       type: String,

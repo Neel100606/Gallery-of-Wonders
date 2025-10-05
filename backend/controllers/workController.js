@@ -1,45 +1,46 @@
-import Work from '../models/workModel.js';
-import User from '../models/userModel.js'; // Needed to update user's 'works' array
-import asyncHandler from '../middlewares/asyncHandler.js';
-import Comment from '../models/commentModel.js'; 
+import Work from "../models/workModel.js";
+import User from "../models/userModel.js"; // Needed to update user's 'works' array
+import asyncHandler from "../middlewares/asyncHandler.js";
+import Comment from "../models/commentModel.js";
 
 // @desc    Create a new work
 // @route   POST /api/works
 // @access  Private
 const createWork = asyncHandler(async (req, res) => {
-  const { title, description, fileUrl, category, tags } = req.body;
+  const { title, description, fileUrls, category, tags } = req.body;
 
-  if (!title || !description || !fileUrl || !category) {
+  if (!title || !description || !category) {
     res.status(400);
-    throw new Error('Please provide title, description, file URL, and category.');
+    throw new Error("Please provide title, description, and category.");
   }
 
-  // Ensure category is one of the allowed enums
-  const allowedCategories = ['Art', 'Photography', 'Writing', 'Other'];
-  if (!allowedCategories.includes(category)) {
+  if (
+    (category === "Art" || category === "Photography") &&
+    (!fileUrls || fileUrls.length === 0)
+  ) {
     res.status(400);
-    throw new Error(`Category must be one of: ${allowedCategories.join(', ')}`);
+    throw new Error(
+      "Art and Photography categories require at least one image."
+    );
   }
 
   const newWork = await Work.create({
-    user: req.user._id, // User ID comes from the authenticated user
+    user: req.user._id,
     title,
     description,
-    fileUrl,
+    fileUrls: fileUrls || [],
     category,
-    tags: tags || [], // Tags are optional
+    tags: tags || [],
   });
 
   if (newWork) {
-    // Also update the user's works array
     await User.findByIdAndUpdate(req.user._id, {
       $push: { works: newWork._id },
     });
-
     res.status(201).json(newWork);
   } else {
     res.status(400);
-    throw new Error('Invalid work data provided.');
+    throw new Error("Invalid work data provided.");
   }
 });
 
@@ -47,7 +48,10 @@ const createWork = asyncHandler(async (req, res) => {
 // @route   GET /api/works
 // @access  Public
 const getWorks = asyncHandler(async (req, res) => {
-  const works = await Work.find({}).populate('user', 'name profileImage'); // Populate user info
+  const { category } = req.query;
+  const filter = category ? { category } : {};
+
+  const works = await Work.find(filter).populate("user", "name profileImage");
   res.status(200).json(works);
 });
 
@@ -55,7 +59,10 @@ const getWorks = asyncHandler(async (req, res) => {
 // @route   GET /api/works/:id
 // @access  Public
 const getWorkById = asyncHandler(async (req, res) => {
-  const work = await Work.findById(req.params.id).populate('user', 'name profileImage');
+  const work = await Work.findById(req.params.id).populate(
+    "user",
+    "name profileImage"
+  );
 
   if (work) {
     // Optionally increment views here if you want to track it
@@ -64,7 +71,7 @@ const getWorkById = asyncHandler(async (req, res) => {
     res.status(200).json(work);
   } else {
     res.status(404);
-    throw new Error('Work not found.');
+    throw new Error("Work not found.");
   }
 });
 
@@ -78,7 +85,7 @@ const updateWork = asyncHandler(async (req, res) => {
   if (work) {
     if (work.user.toString() !== req.user._id.toString()) {
       res.status(403);
-      throw new Error('Not authorized to update this work.');
+      throw new Error("Not authorized to update this work.");
     }
 
     work.title = title || work.title;
@@ -91,10 +98,9 @@ const updateWork = asyncHandler(async (req, res) => {
     res.status(200).json(updatedWork);
   } else {
     res.status(404);
-    throw new Error('Work not found.');
+    throw new Error("Work not found.");
   }
 });
-
 
 // @desc    Delete a work
 // @route   DELETE /api/works/:id
@@ -105,7 +111,7 @@ const deleteWork = asyncHandler(async (req, res) => {
   if (work) {
     if (work.user.toString() !== req.user._id.toString()) {
       res.status(403);
-      throw new Error('Not authorized to delete this work.');
+      throw new Error("Not authorized to delete this work.");
     }
 
     // **NEW LOGIC: Delete all comments associated with this work**
@@ -116,20 +122,21 @@ const deleteWork = asyncHandler(async (req, res) => {
     });
 
     await work.deleteOne();
-    res.status(200).json({ message: 'Work and associated comments removed successfully.' });
+    res
+      .status(200)
+      .json({ message: "Work and associated comments removed successfully." });
   } else {
     res.status(404);
-    throw new Error('Work not found.');
+    throw new Error("Work not found.");
   }
 });
-
 
 const toggleLikeOnWork = asyncHandler(async (req, res) => {
   const work = await Work.findById(req.params.id);
 
   if (!work) {
     res.status(404);
-    throw new Error('Work not found');
+    throw new Error("Work not found");
   }
 
   const userId = req.user._id;
@@ -147,4 +154,18 @@ const toggleLikeOnWork = asyncHandler(async (req, res) => {
   res.status(200).json(work);
 });
 
-export { createWork, getWorks, getWorkById, updateWork, deleteWork, toggleLikeOnWork };
+const getMyWorks = asyncHandler(async (req, res) => {
+  const works = await Work.find({ user: req.user._id }).sort({ createdAt: -1 });
+  res.status(200).json(works);
+});
+
+
+export {
+  createWork,
+  getWorks,
+  getWorkById,
+  updateWork,
+  deleteWork,
+  toggleLikeOnWork,
+  getMyWorks,
+};
