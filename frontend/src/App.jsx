@@ -1,22 +1,20 @@
-// src/App.jsx
-
+import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Header from './components/Header'; // 👈 1. Import the Header
-import Footer from './components/Footer';
+import Navbar from './components/Navbar';
+
+// We will create the Navbar component in a later step
+// import Navbar from './components/layout/Navbar';
 
 const App = () => {
   return (
     <>
       <ToastContainer />
-      <div className="flex flex-col min-h-screen">
-        <Header /> 
-        <main className="flex-grow">
-          <Outlet />
-        </main>
-        <Footer /> 
-      </div>
+      <Navbar />
+      <main className="py-3">
+        <Outlet />
+      </main>
     </>
   );
 };

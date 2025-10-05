@@ -24,7 +24,7 @@ router
   .put(authenticate, updateCurrentUserProfile);
 
 router.route('/:id')
-  .get(authenticate, authorizeAdmin, getUserById)
+  .get(authenticate, getUserById)
   .put(authenticate, authorizeAdmin, updateUserById)
   .delete(authenticate, authorizeAdmin, deleteUser);
 

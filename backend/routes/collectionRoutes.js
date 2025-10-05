@@ -8,6 +8,7 @@ import {
   deleteCollection,
   addWorkToCollection,
   removeWorkFromCollection,
+  getCollectionsByUserId,
 } from '../controllers/collectionController.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
 
@@ -22,5 +23,7 @@ router.route('/:id')
 
 router.put('/:id/add-work', authenticate, addWorkToCollection);
 router.put('/:id/remove-work', authenticate, removeWorkFromCollection);
+router.get('/user/:userId', getCollectionsByUserId);
+
 
 export default router;

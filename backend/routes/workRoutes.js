@@ -8,6 +8,8 @@ import {
   deleteWork,
   toggleLikeOnWork,
   getMyWorks,
+  getWorksByUserId,
+  searchWorks,
 } from "../controllers/workController.js";
 // Import the comment controllers
 import {
@@ -32,5 +34,8 @@ router
   .route("/:workId/comments")
   .post(authenticate, addCommentToWork)
   .get(getCommentsForWork);
+router.get("/user/:userId", getWorksByUserId);
+router.get("/search/:keyword", searchWorks);
+
 
 export default router;

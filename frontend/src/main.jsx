@@ -1,59 +1,53 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
-import './index.css';
-import HomePage from './pages/HomePage.jsx'; // We'll create this next
-import RegisterPage from './pages/RegisterPage.jsx';
-import LoginPage from './pages/LoginPage.jsx'; 
-import ProfilePage from './pages/ProfilePage.jsx'; // 👈 1. Import ProfilePage
-import PrivateRoute from './components/PrivateRoute.jsx'; // 👈 2. Import PrivateRoute
-import CreateWorkPage from './pages/CreateWorkPage.jsx';
-import GalleryPage from './pages/GalleryPage.jsx';
-import WorkDetailPage from './pages/WorkDetailPage.jsx';
-import MyCollectionsPage from './pages/MyCollectionsPage'; 
-import CollectionDetailPage from './pages/CollectionDetailPage';
-import MyWorksPage from './pages/MyWorksPage'; 
-import EditWorkPage from './pages/EditWorkPage'; 
-
-// React Router
 import {
   createBrowserRouter,
   createRoutesFromElements,
   Route,
   RouterProvider,
 } from 'react-router-dom';
-
-// Redux
 import { Provider } from 'react-redux';
+
+import App from './App.jsx';
+import './index.css';
 import store from './redux/store.js';
 
+// Pages
+import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
+import HomePage from './pages/HomePage.jsx';
+import WorkDetailPage from './pages/WorkDetailPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx'; 
+import ProtectedRoute from './components/ProtectedRoute.jsx'; // 👈 Import ProtectedRoute
+import EditProfilePage from './pages/EditProfilePage.jsx'; // 👈 Import the new page
+import CollectionDetailPage from './pages/CollectionDetailPage.jsx'; 
+import SearchPage from './pages/SearchPage.jsx';
+
+// Create the router configuration
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
+      <Route path="/search/:keyword" element={<SearchPage />} /> 
       <Route index={true} path="/" element={<HomePage />} />
-      <Route path="/gallery" element={<GalleryPage />} />
-      <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/work/:id" element={<WorkDetailPage />} />
+      <Route path="/profile" element={<ProfilePage />} /> {/* 👈 For the current user */}
+      <Route path="/profile/:userId" element={<ProfilePage />} /> {/* 👈 For other users */}
+      <Route path="/collection/:id" element={<CollectionDetailPage />} />
 
-       <Route path="/work/:id" element={<WorkDetailPage />} />
-
-      <Route path="" element={<PrivateRoute />}>
+      <Route path="" element={<ProtectedRoute />}>
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/work/create" element={<CreateWorkPage />} />
-        <Route path="/my-collections" element={<MyCollectionsPage />} />
-        <Route path="/collection/:id" element={<CollectionDetailPage />} />
-        <Route path="/my-works" element={<MyWorksPage />} /> 
-        <Route path="/work/edit/:id" element={<EditWorkPage />} />
+        <Route path="/profile/edit" element={<EditProfilePage />} /> {/* 👈 Add this line */}
       </Route>
     </Route>
   )
 );
 
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider store={store}>
-       <RouterProvider router={router} />
+      <RouterProvider router={router} />
     </Provider>
   </React.StrictMode>
 );

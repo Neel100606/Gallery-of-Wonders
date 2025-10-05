@@ -36,8 +36,8 @@ const getMyCollections = asyncHandler(async (req, res) => {
 
 const getCollectionById = asyncHandler(async (req, res) => {
   const collection = await Collection.findById(req.params.id)
-    .populate('user', 'name profileImage')
-    .populate('works', 'title fileUrl category');
+  .populate('user', 'name profileImage')
+  .populate('works', 'title fileUrls likes comments'); 
 
   if (collection) {
     if (collection.isPrivate && collection.user.toString() !== req.user?._id?.toString()) {
@@ -176,6 +176,24 @@ const removeWorkFromCollection = asyncHandler(async (req, res) => {
   }
 });
 
+const getCollectionsByUserId = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  // Find only public collections for that user
+  const collections = await Collection.find({ user: userId, isPrivate: false })
+  .populate('user', 'name profileImage') 
+  .populate('works', 'fileUrls')
+  .sort({ createdAt: -1 });
+
+
+  if (collections) {
+    res.status(200).json(collections);
+  } else {
+    res.status(404);
+    throw new Error('Collections not found for this user.');
+  }
+});
+
+
 export {
   createCollection,
   getMyCollections,
@@ -184,4 +202,5 @@ export {
   deleteCollection,
   addWorkToCollection,
   removeWorkFromCollection,
+  getCollectionsByUserId,
 };

@@ -1,165 +1,78 @@
-import { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
-import { FaHeart, FaRegHeart, FaUserCircle, FaRegBookmark } from "react-icons/fa";
-import moment from "moment";
-
-import { useGetWorkDetailsQuery, useToggleLikeMutation } from "../redux/api/worksApiSlice.js";
-import { useGetCommentsForWorkQuery, useAddCommentToWorkMutation } from "../redux/api/commentsApiSlice.js";
-import Loader from "../components/Loader";
-import AddToCollectionModal from "../components/AddToCollectionModal";
+import React from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useGetWorkDetailsQuery } from '../redux/api/worksApiSlice';
+import { useGetCommentsForWorkQuery } from '../redux/api/commentsApiSlice';
+import Loader from '../components/Loader';
+import CommentList from '../components/CommentList';
+import AddCommentForm from '../components/AddCommentForm';
+import ImageCarousel from '../components/ImageCarousel'; // 👈 Import the new component
 
 const WorkDetailPage = () => {
   const { id: workId } = useParams();
-  const navigate = useNavigate();
-  const { userInfo } = useSelector((state) => state.auth);
 
-  const [commentText, setCommentText] = useState("");
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { data: work, isLoading: isLoadingWork, error: workError } = useGetWorkDetailsQuery(workId);
+  const { data: comments, isLoading: isLoadingComments } = useGetCommentsForWorkQuery(workId);
 
-  // RTK Query Hooks
-  const { data: work, isLoading: isLoadingWork, error: workError, refetch: refetchWork } = useGetWorkDetailsQuery(workId);
-  const { data: comments, isLoading: isLoadingComments, refetch: refetchComments } = useGetCommentsForWorkQuery(workId);
-  
-  const [toggleLike] = useToggleLikeMutation();
-  const [addComment, { isLoading: isAddingComment }] = useAddCommentToWorkMutation();
-
-  // Set initial selected image when work data loads
-  useEffect(() => {
-    if (work && work.fileUrls && work.fileUrls.length > 0) {
-      setSelectedImage(work.fileUrls[0]);
-    }
-  }, [work]);
-
-  const handleLike = async () => {
-    if (!userInfo) {
-      toast.error("Please log in to like a work");
-      navigate("/login");
-      return;
-    }
-    await toggleLike(workId);
-    refetchWork();
-  };
-
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!commentText.trim()) {
-      toast.error("Comment cannot be empty");
-      return;
-    }
-    try {
-      await addComment({ workId, text: commentText }).unwrap();
-      toast.success("Comment added!");
-      setCommentText("");
-      refetchComments();
-    } catch (err) {
-      toast.error(err?.data?.message || err.error);
-    }
-  };
-
-  if (isLoadingWork) {
+  if (isLoadingWork || isLoadingComments) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="flex justify-center items-center h-screen">
         <Loader />
       </div>
     );
   }
-  
-  if (workError) return <div className="text-red-500 text-center p-8">Error loading work details.</div>;
 
-  const isLiked = userInfo ? work.likes.includes(userInfo._id) : false;
+  if (workError) {
+    return <div className="text-center mt-10 text-red-500">Error: {workError?.data?.message || 'Could not fetch work'}</div>;
+  }
+
+  const userName = work.user ? work.user.name : 'Unknown Artist';
+  const userProfileImage = work.user ? work.user.profileImage : '/default-avatar.png';
+  const userProfileLink = work.user ? `/profile/${work.user._id}` : '#';
 
   return (
-    <>
-      {isModalOpen && <AddToCollectionModal workId={workId} onClose={() => setIsModalOpen(false)} />}
+    <div className="container mx-auto mt-10 max-w-6xl">
+      <div className="flex flex-col md:flex-row border rounded-lg shadow-lg overflow-hidden min-h-[80vh]">
+        {/* Left Column: Image Carousel */}
+        <div className="w-full md:w-1/2 bg-black">
+          {/* 👇 Replace the single image with the carousel component */}
+          <ImageCarousel images={work.fileUrls} />
+        </div>
 
-      <div className="container mx-auto p-4 sm:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Image Section */}
-          <div className="lg:col-span-2">
-            <div className="bg-gray-200 rounded-lg overflow-hidden mb-4">
-              <img src={selectedImage || (work.fileUrls && work.fileUrls[0])} alt={work.title} className="w-full h-auto object-contain max-h-[70vh]" />
-            </div>
-            {work.fileUrls && work.fileUrls.length > 1 && (
-              <div className="flex space-x-2">
-                {work.fileUrls.map((url, index) => (
-                  <img
-                    key={index}
-                    src={url}
-                    alt={`thumbnail ${index}`}
-                    onClick={() => setSelectedImage(url)}
-                    className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 ${selectedImage === url ? 'border-purple-500' : 'border-transparent'}`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Details & Comments Section */}
-          <div>
-            <h1 className="text-4xl font-bold mb-2">{work.title}</h1>
-            <Link to={`/artist/${work.user._id}`} className="text-lg text-gray-600 hover:text-purple-600 mb-4 inline-block">
-              by {work.user.name}
+        {/* Right Column: Details & Comments */}
+        <div className="w-full md:w-1/2 flex flex-col bg-white">
+          {/* Header */}
+          <div className="flex items-center p-4 border-b">
+            <Link to={userProfileLink}>
+              <img src={userProfileImage} alt={userName} className="h-10 w-10 rounded-full object-cover" />
             </Link>
-            <p className="text-gray-700 mb-6 whitespace-pre-wrap">{work.description}</p>
-
-            {/* Action Buttons */}
-            <div className="flex items-center space-x-6 mb-8">
-              <button onClick={handleLike} className="flex items-center space-x-2 text-xl text-gray-700 hover:text-red-500">
-                {isLiked ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
-                <span>{work.likes.length}</span>
-              </button>
-              <button onClick={() => setIsModalOpen(true)} className="flex items-center space-x-2 text-xl text-gray-700 hover:text-purple-600">
-                <FaRegBookmark />
-                <span>Save</span>
-              </button>
-            </div>
-
-            {/* Comments Section */}
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold border-b pb-2">Comments</h2>
-              
-              {userInfo && (
-                <form onSubmit={handleCommentSubmit} className="flex flex-col space-y-2">
-                  <textarea
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Add your comment..."
-                    className="w-full p-2 border rounded-md focus:ring-purple-500 focus:border-purple-500"
-                    rows="3"
-                  ></textarea>
-                  <button type="submit" disabled={isAddingComment} className="self-end bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50">
-                    {isAddingComment ? "Posting..." : "Post Comment"}
-                  </button>
-                </form>
-              )}
-
-              {isLoadingComments ? (
-                <p>Loading comments...</p>
-              ) : comments && comments.length > 0 ? (
-                comments.map((comment) => (
-                  <div key={comment._id} className="flex space-x-3">
-                    {comment.user.profileImage ? (
-                      <img src={comment.user.profileImage} alt={comment.user.name} className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      <FaUserCircle className="w-10 h-10 text-gray-400" />
-                    )}
-                    <div>
-                      <p className="font-semibold">{comment.user.name} <span className="text-xs text-gray-500 font-normal">{moment(comment.createdAt).fromNow()}</span></p>
-                      <p className="text-gray-800">{comment.text}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">Be the first to comment!</p>
-              )}
+            <div className="ml-3">
+              <Link to={userProfileLink} className="text-sm font-semibold text-gray-800">
+                {userName}
+              </Link>
             </div>
           </div>
+
+          {/* Description */}
+          <div className="p-4 border-b">
+              <p className="text-sm">
+                <span className="font-semibold text-gray-800 mr-2">{work.title}</span>
+                <span className="text-gray-600">{work.description}</span>
+              </p>
+          </div>
+          
+          {/* Comment List */}
+          <CommentList comments={comments} />
+
+          {/* Action Bar & Likes */}
+           <div className="border-t p-4">
+             <p className="font-semibold text-gray-800 text-sm">{work.likes.length} likes</p>
+           </div>
+          
+          {/* Add Comment Form */}
+          <AddCommentForm workId={workId} />
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

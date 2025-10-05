@@ -158,6 +158,40 @@ const getMyWorks = asyncHandler(async (req, res) => {
   const works = await Work.find({ user: req.user._id }).sort({ createdAt: -1 });
   res.status(200).json(works);
 });
+const getWorksByUserId = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const works = await Work.find({ user: userId }).sort({ createdAt: -1 });
+  if (works) {
+    res.status(200).json(works);
+  } else {
+    res.status(404);
+    throw new Error('Works not found for this user.');
+  }
+});
+
+const searchWorks = asyncHandler(async (req, res) => {
+  const { keyword } = req.params;
+  
+  // Create a case-insensitive regular expression from the keyword
+  const searchRegex = new RegExp(keyword, 'i');
+
+  // Find works where the title or description matches the keyword
+  const works = await Work.find({
+    $or: [
+      { title: { $regex: searchRegex } },
+      { description: { $regex: searchRegex } },
+    ],
+  }).populate('user', 'name profileImage');
+
+  if (works) {
+    res.json(works);
+  } else {
+    res.status(404);
+    throw new Error('No works found');
+  }
+});
+
+
 
 
 export {
@@ -168,4 +202,6 @@ export {
   deleteWork,
   toggleLikeOnWork,
   getMyWorks,
+  getWorksByUserId,
+  searchWorks,
 };

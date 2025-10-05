@@ -41,8 +41,8 @@ export const collectionApiSlice = apiSlice.injectEndpoints({
       }),
       // 👇 Invalidate both 'Collection' and the specific collection's tag
       invalidatesTags: (result, error, { collectionId }) => [
-        { type: 'Collection', id: collectionId },
-        'Collection'
+        { type: "Collection", id: collectionId },
+        "Collection",
       ],
     }),
     getCollectionDetails: builder.query({
@@ -50,29 +50,37 @@ export const collectionApiSlice = apiSlice.injectEndpoints({
         url: `${COLLECTIONS_URL}/${id}`,
       }),
       // 👇 Provide a specific tag for this collection
-      providesTags: (result, error, id) => [{ type: 'Collection', id }],
+      providesTags: (result, error, id) => [{ type: "Collection", id }],
     }),
 
     // 👇 ADD THIS MUTATION
     deleteCollection: builder.mutation({
       query: (id) => ({
         url: `${COLLECTIONS_URL}/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: ['Collection'],
+      invalidatesTags: ["Collection"],
     }),
 
     // 👇 ADD THIS MUTATION
     updateCollection: builder.mutation({
       query: ({ id, ...data }) => ({
         url: `${COLLECTIONS_URL}/${id}`,
-        method: 'PUT',
+        method: "PUT",
         body: data,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Collection', id }, 'Collection'],
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Collection", id },
+        "Collection",
+      ],
     }),
 
-
+    getCollectionsByUserId: builder.query({
+      query: (userId) => ({
+        url: `${COLLECTIONS_URL}/user/${userId}`,
+      }),
+      providesTags: ["Collection"],
+    }), 
   }),
 });
 export const {
@@ -83,4 +91,5 @@ export const {
   useGetCollectionDetailsQuery,
   useDeleteCollectionMutation,
   useUpdateCollectionMutation,
+  useGetCollectionsByUserIdQuery,
 } = collectionApiSlice;
