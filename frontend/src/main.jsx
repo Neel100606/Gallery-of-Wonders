@@ -22,6 +22,7 @@ import ProtectedRoute from './components/ProtectedRoute.jsx'; // 👈 Import Pro
 import EditProfilePage from './pages/EditProfilePage.jsx'; // 👈 Import the new page
 import CollectionDetailPage from './pages/CollectionDetailPage.jsx'; 
 import SearchPage from './pages/SearchPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx'; 
 
 // Create the router configuration
 const router = createBrowserRouter(
@@ -39,6 +40,7 @@ const router = createBrowserRouter(
       <Route path="" element={<ProtectedRoute />}>
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/edit" element={<EditProfilePage />} /> {/* 👈 Add this line */}
+        <Route path="/dashboard" element={<DashboardPage />} />
       </Route>
     </Route>
   )

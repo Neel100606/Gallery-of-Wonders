@@ -191,6 +191,32 @@ const searchWorks = asyncHandler(async (req, res) => {
   }
 });
 
+const getWorkStats = asyncHandler(async (req, res) => {
+  // Find all works by the current user
+  const userWorks = await Work.find({ user: req.user._id });
+
+  if (userWorks) {
+    const totalWorks = userWorks.length;
+    const totalLikes = userWorks.reduce((sum, work) => sum + work.likes.length, 0);
+    const totalComments = userWorks.reduce((sum, work) => sum + work.comments.length, 0);
+    const totalSaves = userWorks.reduce((sum, work) => sum + work.saves, 0);
+
+    // Find the most liked work
+    const mostLikedWork = userWorks.reduce((max, work) => (work.likes.length > max.likes.length ? work : max), userWorks[0] || null);
+
+    res.json({
+      totalWorks,
+      totalLikes,
+      totalComments,
+      totalSaves,
+      mostLikedWork: mostLikedWork ? { title: mostLikedWork.title, likes: mostLikedWork.likes.length } : null,
+    });
+  } else {
+    res.status(404);
+    throw new Error('User works not found');
+  }
+});
+
 
 
 
@@ -204,4 +230,5 @@ export {
   getMyWorks,
   getWorksByUserId,
   searchWorks,
+  getWorkStats,
 };

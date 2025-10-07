@@ -10,6 +10,7 @@ import {
   getMyWorks,
   getWorksByUserId,
   searchWorks,
+  getWorkStats, 
 } from "../controllers/workController.js";
 // Import the comment controllers
 import {
@@ -36,6 +37,7 @@ router
   .get(getCommentsForWork);
 router.get("/user/:userId", getWorksByUserId);
 router.get("/search/:keyword", searchWorks);
+router.get("/stats/mine", authenticate, getWorkStats);
 
 
 export default router;

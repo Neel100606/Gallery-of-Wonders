@@ -117,6 +117,13 @@ export const worksApiSlice = apiSlice.injectEndpoints({
       }),
       providesTags: ["Work"],
     }),
+    getWorkStats: builder.query({
+  query: () => ({
+    url: `${WORKS_URL}/stats/mine`,
+  }),
+  providesTags: ['Work'], // Invalidate if works change
+}),
+
   }),
 });
 
@@ -130,4 +137,5 @@ export const {
   useUpdateWorkMutation,
   useGetWorksByUserIdQuery,
   useSearchWorksQuery,
+  useGetWorkStatsQuery,
 } = worksApiSlice;
