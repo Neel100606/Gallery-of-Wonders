@@ -1,16 +1,47 @@
-# React + Vite
+# 💻 Gallery of Wonders - Frontend (React)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the client-side application for the Gallery of Wonders, built with React and Vite. It provides the full user interface for interacting with the platform.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Features
+-   **Modern UI:** A clean, responsive interface built with Tailwind CSS.
+-   **Efficient State Management:** Uses Redux Toolkit and RTK Query for predictable state management and efficient data fetching/caching.
+-   **Real-Time Updates:** Connects to the Node.js backend via Socket.IO to receive live updates for likes and comments.
+-   **Interactive Components:** Includes a rich set of components for creating, viewing, and managing creative content.
 
-## React Compiler
+### Tech Stack
+-   **Framework:** React.js (Vite)
+-   **Styling:** Tailwind CSS
+-   **State Management:** Redux Toolkit & RTK Query
+-   **Real-Time:** Socket.IO Client
 
-The React Compiler is not enabled on this template. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🚀 Local Setup
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+-   The **Node.js Backend** must be running on `http://localhost:5000`.
+
+1.  **Navigate to this directory:**
+    ```bash
+    cd frontend
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Create Environment File:**
+    Create a `.env` file in this directory and add your Cloudinary details:
+    ```env
+    VITE_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+    VITE_CLOUDINARY_UPLOAD_PRESET=your_cloudinary_upload_preset
+    ```
+
+4.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
+    The application will be available at `http://localhost:5173`.
