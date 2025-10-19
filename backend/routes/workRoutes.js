@@ -11,6 +11,7 @@ import {
   getWorksByUserId,
   searchWorks,
   getWorkStats, 
+  analyzeImageWithAI,
 } from "../controllers/workController.js";
 // Import the comment controllers
 import {
@@ -38,6 +39,6 @@ router
 router.get("/user/:userId", getWorksByUserId);
 router.get("/search/:keyword", searchWorks);
 router.get("/stats/mine", authenticate, getWorkStats);
-
+router.post("/analyze-image", authenticate, analyzeImageWithAI);
 
 export default router;

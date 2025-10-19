@@ -26,12 +26,24 @@ const addCommentToWork = asyncHandler(async (req, res) => {
   if (newComment) {
     work.comments.push(newComment._id);
     await work.save();
-    res.status(201).json(newComment);
+
+    // After saving, fetch the full, populated work object
+    const updatedWork = await Work.findById(workId).populate('user', 'name profileImage');
+
+    // Emit the global 'workUpdated' event with the full work object
+    req.io.emit('workUpdated', updatedWork);
+    
+    // Also emit the specific newComment event for the detail page (optional but good practice)
+    const populatedComment = await newComment.populate('user', 'name profileImage');
+    req.io.to(workId).emit('newComment', populatedComment);
+
+    res.status(201).json(populatedComment);
   } else {
     res.status(400);
     throw new Error('Invalid comment data.');
   }
 });
+
 
 const getCommentsForWork = asyncHandler(async (req, res) => {
   const { workId } = req.params;

@@ -15,6 +15,9 @@ const workSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    summary: { 
+      type: String, 
+    },
     fileUrls: {
       type: [String],
       required: false,

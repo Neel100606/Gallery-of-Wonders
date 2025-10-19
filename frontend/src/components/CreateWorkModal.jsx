@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { useCreateWorkMutation } from '../redux/api/worksApiSlice';
+import { useCreateWorkMutation, useAnalyzeImageMutation } from '../redux/api/worksApiSlice';
 
 const CreateWorkModal = ({ isOpen, onClose }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [summary, setSummary] = useState('');
   const [category, setCategory] = useState('Art');
   const [fileUrls, setFileUrls] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [customTag, setCustomTag] = useState('');
+  
   const [isUploading, setIsUploading] = useState(false);
-
+  
   const [createWork, { isLoading: isCreating }] = useCreateWorkMutation();
+  const [analyzeContent, { isLoading: isAnalyzing }] = useAnalyzeImageMutation(); 
 
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -19,8 +24,8 @@ const CreateWorkModal = ({ isOpen, onClose }) => {
     if (files.length === 0) return;
 
     setIsUploading(true);
-    const uploadedUrls = [];
-
+    toast.info('Uploading image(s)...');
+    
     for (const file of files) {
       const formData = new FormData();
       formData.append('file', file);
@@ -33,44 +38,82 @@ const CreateWorkModal = ({ isOpen, onClose }) => {
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        uploadedUrls.push(data.secure_url);
+        
+        setFileUrls(prevUrls => [...prevUrls, data.secure_url]);
       } catch (err) {
         toast.error(`Failed to upload ${file.name}.`);
       }
     }
-    
-    // Add new uploaded URLs to existing ones
-    setFileUrls(prevUrls => [...prevUrls, ...uploadedUrls]);
     setIsUploading(false);
-    toast.success(`${uploadedUrls.length} image(s) uploaded successfully!`);
+    toast.success('Image(s) uploaded successfully!');
   };
 
-  // NEW: Function to remove an image
   const handleRemoveImage = (urlToRemove) => {
     setFileUrls(prevUrls => prevUrls.filter(url => url !== urlToRemove));
     toast.info('Image removed.');
   };
+  
+  const handleAiAnalysis = async () => {
+    if (category === 'Writing') {
+      if (description.length < 20) {
+        toast.error('Please write more content (at least 20 words) to analyze.');
+        return;
+      }
+      try {
+        const result = await analyzeContent({ textContent: description }).unwrap();
+        setSummary(result.caption);
+        setTags(prevTags => [...new Set([...prevTags, ...result.tags])]);
+        toast.success('AI analysis complete!');
+      } catch (err) {
+        toast.error('Failed to analyze text.');
+      }
+    } 
+    else {
+      if (fileUrls.length === 0) {
+        toast.error('Please upload at least one image to analyze.');
+        return;
+      }
+      try {
+        const result = await analyzeContent({ imageUrl: fileUrls[0] }).unwrap();
+        setDescription(result.caption);
+        setTags(prevTags => [...new Set([...prevTags, ...result.tags])]);
+        toast.success('Image analyzed successfully!');
+      } catch (err) {
+        toast.error('Failed to analyze image.');
+      }
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+  
+  const handleAddCustomTag = () => {
+    const newTag = customTag.trim().toLowerCase();
+    if (newTag && !tags.includes(newTag)) {
+      setTags([...tags, newTag]);
+      setCustomTag('');
+    }
+  };
+
+  const handleTagInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddCustomTag();
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!title.trim() || !description.trim()) {
-      toast.error('Please provide a title and description.');
+      toast.error('Please provide a title and content/description.');
       return;
     }
-
     if ((category === 'Art' || category === 'Photography' || category === 'Other') && fileUrls.length === 0) {
       toast.error('This category requires at least one image.');
       return;
     }
-    
-    const payload = {
-      title,
-      description,
-      category,
-      fileUrls: category === 'Writing' ? [] : fileUrls,
-    };
-
+    const payload = { title, description, summary, category, tags, fileUrls: category === 'Writing' ? [] : fileUrls };
     try {
       await createWork(payload).unwrap();
       toast.success('Work created successfully!');
@@ -80,16 +123,18 @@ const CreateWorkModal = ({ isOpen, onClose }) => {
       toast.error(err?.data?.message || 'Failed to create work.');
     }
   };
-  
+
   const resetForm = () => {
     setTitle('');
     setDescription('');
+    setSummary('');
     setCategory('Art');
     setFileUrls([]);
-    setIsUploading(false); // Reset upload state
-  }
+    setTags([]);
+    setCustomTag('');
+    setIsUploading(false);
+  };
 
-  // Close modal and reset form
   const handleCloseModal = () => {
     resetForm();
     onClose();
@@ -98,8 +143,7 @@ const CreateWorkModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    // UPDATED: Modal background to a lighter gray
-    <div className="fixed inset-0 bg-opacity-30 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-50 flex justify-center items-center p-4">
       <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-4">Create a New Work</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -120,19 +164,12 @@ const CreateWorkModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
               {isUploading && <p className="text-sm text-indigo-600 mt-2">Uploading...</p>}
-              
-              {/* UPDATED: Image Previews with Delete Button */}
               {fileUrls.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {fileUrls.map((url, index) => (
                     <div key={index} className="relative group">
                       <img src={url} alt={`preview ${index}`} className="w-full h-24 object-cover rounded-md border border-gray-200"/>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(url)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label="Remove image"
-                      >
+                      <button type="button" onClick={() => handleRemoveImage(url)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Remove image">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path></svg>
                       </button>
                     </div>
@@ -146,10 +183,66 @@ const CreateWorkModal = ({ isOpen, onClose }) => {
             <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
             <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
           </div>
+          
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows="3" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+              {category === 'Writing' ? 'Content' : 'Description'}
+            </label>
+            <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={category === 'Writing' ? "10" : "3"} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
           </div>
+          
+          {category === 'Writing' && (
+             <div>
+                <label htmlFor="summary" className="block text-sm font-medium text-gray-700">AI Summary</label>
+                {/* 👇 THIS TEXTAREA IS NOW EDITABLE */}
+                <textarea 
+                  id="summary" 
+                  value={summary} 
+                  onChange={(e) => setSummary(e.target.value)}
+                  placeholder="Click 'Generate with AI' or write your own summary..." 
+                  rows="3" 
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+             </div>
+          )}
+
+          <button 
+            type="button" 
+            onClick={handleAiAnalysis}
+            disabled={isAnalyzing}
+            className="text-sm text-indigo-600 font-semibold hover:underline disabled:text-gray-400 disabled:cursor-not-allowed"
+          >
+            {isAnalyzing ? 'Analyzing...' : '✨ Generate Summary & Tags with AI'}
+          </button>
+          
+          <div>
+              <label className="block text-sm font-medium text-gray-700">Tags</label>
+              <div className="mt-2 flex flex-wrap gap-2 items-center">
+                {tags.map(tag => (
+                  <span key={tag} className="flex items-center px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-full">
+                    {tag}
+                    <button type="button" onClick={() => handleRemoveTag(tag)} className="ml-2 text-indigo-600 hover:text-indigo-800">
+                      &times;
+                    </button>
+                  </span>
+                ))}
+              </div>
+              
+              <div className="mt-3 flex items-center gap-2">
+                <input 
+                    type="text"
+                    value={customTag}
+                    onChange={(e) => setCustomTag(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                    placeholder="Add your own tag"
+                    className="flex-grow border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <button type="button" onClick={handleAddCustomTag} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">
+                    Add
+                </button>
+              </div>
+          </div>
+
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
             <select id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
@@ -161,11 +254,10 @@ const CreateWorkModal = ({ isOpen, onClose }) => {
           </div>
           
           <div className="flex justify-end space-x-4 pt-4 border-t">
-            {/* UPDATED: Call handleCloseModal */}
             <button type="button" onClick={handleCloseModal} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">
               Cancel
             </button>
-            <button type="submit" disabled={isCreating || isUploading} className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-400">
+            <button type="submit" disabled={isCreating || isUploading || isAnalyzing} className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-400">
               {isCreating ? 'Creating...' : 'Create Work'}
             </button>
           </div>

@@ -1,17 +1,17 @@
-import { apiSlice } from "./apiSlice.js";
-import { WORKS_URL } from "../constant";
-import { toast } from "react-toastify";
+import { apiSlice } from './apiSlice.js';
+import { WORKS_URL } from '../constant';
 
 export const worksApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     createWork: builder.mutation({
       query: (data) => ({
         url: `${WORKS_URL}`,
-        method: "POST",
+        method: 'POST',
         body: data,
       }),
-      invalidatesTags: ["Work"],
+      invalidatesTags: ['Work'], 
     }),
+
     getWorks: builder.query({
       query: ({ category }) => {
         const params = {};
@@ -31,6 +31,7 @@ export const worksApiSlice = apiSlice.injectEndpoints({
       query: (workId) => ({
         url: `${WORKS_URL}/${workId}`,
       }),
+      providesTags: ["Work"],
       keepUnusedDataFor: 5,
     }),
 
@@ -39,90 +40,62 @@ export const worksApiSlice = apiSlice.injectEndpoints({
         url: `${WORKS_URL}/${workId}/like`,
         method: "PUT",
       }),
-      async onQueryStarted(workId, { dispatch, queryFulfilled, getState }) {
-        const { userInfo } = getState().auth;
-        if (!userInfo) return;
-
-        // Define the patch result for updating the getWorks query
-        const worksPatchResult = dispatch(
-          apiSlice.util.updateQueryData("getWorks", {}, (draft) => {
-            const work = draft.find((w) => w._id === workId);
-            if (work) {
-              const hasLiked = work.likes.includes(userInfo._id);
-              if (hasLiked) {
-                // Remove user's like
-                work.likes = work.likes.filter((id) => id !== userInfo._id);
-              } else {
-                // Add user's like
-                work.likes.push(userInfo._id);
-              }
-            }
-          })
-        );
-
-        // Define the patch result for updating the getWorkDetails query (if the user is on that page)
-        const workDetailsPatchResult = dispatch(
-          apiSlice.util.updateQueryData("getWorkDetails", workId, (draft) => {
-            const hasLiked = draft.likes.includes(userInfo._id);
-            if (hasLiked) {
-              draft.likes = draft.likes.filter((id) => id !== userInfo._id);
-            } else {
-              draft.likes.push(userInfo._id);
-            }
-          })
-        );
-
-        try {
-          await queryFulfilled;
-        } catch {
-          worksPatchResult.undo();
-          workDetailsPatchResult.undo();
-          toast.error("Failed to update like");
-        }
-      },
+      invalidatesTags: ['Work'],
     }),
+
     getMyWorks: builder.query({
       query: () => ({
         url: `${WORKS_URL}/mine`,
       }),
-      providesTags: ["MyWorks"],
+      providesTags: ['Work'],
       keepUnusedDataFor: 5,
     }),
 
     deleteWork: builder.mutation({
       query: (workId) => ({
         url: `${WORKS_URL}/${workId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Work", "MyWorks"],
+      invalidatesTags: ['Work'],
     }),
+
     updateWork: builder.mutation({
       query: ({ workId, formData }) => ({
         url: `${WORKS_URL}/${workId}`,
-        method: "PUT",
+        method: 'PUT',
         body: formData,
       }),
-      invalidatesTags: ["Work", "MyWorks"],
+      invalidatesTags: ['Work'],
     }),
+    
     getWorksByUserId: builder.query({
       query: (userId) => ({
         url: `${WORKS_URL}/user/${userId}`,
       }),
-      providesTags: ["Work"],
-      keepUnusedDataFor: 5,
+      providesTags: ['Work'],
     }),
+
     searchWorks: builder.query({
       query: (keyword) => ({
         url: `${WORKS_URL}/search/${keyword}`,
       }),
-      providesTags: ["Work"],
+      providesTags: ['Work'],
     }),
+    
     getWorkStats: builder.query({
-  query: () => ({
-    url: `${WORKS_URL}/stats/mine`,
-  }),
-  providesTags: ['Work'], // Invalidate if works change
-}),
+      query: () => ({
+        url: `${WORKS_URL}/stats/mine`,
+      }),
+      providesTags: ['Work'],
+    }),
+
+    analyzeImage: builder.mutation({
+      query: (data) => ({
+        url: `${WORKS_URL}/analyze-image`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
 
   }),
 });
@@ -138,4 +111,5 @@ export const {
   useGetWorksByUserIdQuery,
   useSearchWorksQuery,
   useGetWorkStatsQuery,
+  useAnalyzeImageMutation, 
 } = worksApiSlice;
