@@ -67,7 +67,7 @@ To run this project locally, you must run all three services (Frontend, Backend,
 
 * Node.js (v18 or later)
 * Python (v3.10 or later) & `pip`
-* MongoDB (a local instance or a free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster)
+* MongoDB (a local instance or a free.
 * A [Cloudinary](https://cloudinary.com/) account (for media storage)
 * A [Pinecone](https://www.pinecone.io/) account (for the vector database)
 
@@ -167,7 +167,3 @@ To run this project locally, you must run all three services (Frontend, Backend,
     > The React app will be running on `http://localhost:5173`.
 
 You can now open your browser to `http://localhost:5173` and use the full application!
-
-## 📜 License
-
-This project is open-source and available under the **MIT License**.
