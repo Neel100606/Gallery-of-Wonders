@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
+    "axios": "^1.13.2",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^1.41.3",
     "concurrently": "^9.2.1",
@@ -15,6 +16,7 @@
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemon": "^3.1.10",
+    "socket.io": "^4.8.3",
     "tailwindcss": "^4.1.13"
   },
   "name": "webster",
@@ -22,7 +24,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "backend": "nodemon backend/index.js",
+    "backend": "nodemon index.js",
     "frontend": "npm run dev --prefix frontend",
     "dev": "concurrently \"npm run frontend\" \"npm run backend\""
   },
