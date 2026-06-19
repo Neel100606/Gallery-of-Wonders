@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://localhost:5000';
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 export const USERS_URL = '/api/users';
 export const WORKS_URL = '/api/works';
 export const COLLECTIONS_URL = '/api/collections';
